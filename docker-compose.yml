@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  master:
+    image: chrislusf/seaweedfs:latest
+    command: "master -ip=master"
+    ports:
+      - "9333:9333"
+    networks:
+      - weednet
+
+  volume:
+    image: chrislusf/seaweedfs:latest
+    command: "volume -mserver=master:9333 -ip=volume"
+    depends_on:
+      - master
+    volumes:
+      - weed_data:/data
+    ports:
+      - "8080:8080"
+    networks:
+      - weednet
+
+  filer:
+    image: chrislusf/seaweedfs:latest
+    command: "filer -master=master:9333"
+    depends_on:
+      - master
+      - volume
+    ports:
+      - "8888:8888"
+    networks:
+      - weednet
+
+  file_monitor:
+    build: ./monitor
+    volumes:
+      - ./shared_file_storage:/file_storage
+    depends_on:
+      - master
+      - volume
+      - filer
+    networks:
+      - weednet
+
+networks:
+  weednet:
+
+volumes:
+  weed_data:
